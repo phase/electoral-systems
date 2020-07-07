@@ -94,16 +94,16 @@ object ModelGenerator {
     }
 
     fun createVoters(amount: Int, issues: List<Issue>): List<Voter> =
-        (0..amount).map { createVoter(issues) }
+        (0 until amount).map { createVoter(issues) }
 
     fun createParty(issues: List<Issue>): Party {
         val id = partyCount++
-        val issueStances = issues.map { it to generatePolicy() }.toMap()
+        val issueStances = issues.map { it to generatePolicy() }.toMap().toMutableMap()
         return Party(id, generatePartyName(id), issueStances)
     }
 
     fun createParties(amount: Int, issues: List<Issue>): List<Party> =
-        (0..amount).map { createParty(issues) }
+        (0 until amount).map { createParty(issues) }
 
     fun createModel(issues: Int, parties: Int, voters: Int): ElectionModel {
         val issues = createIssues(issues)

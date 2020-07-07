@@ -25,6 +25,11 @@ enum class Policy(val value: Double) {
 
     fun disapproves(): Boolean = value < 0
 
+    fun above(amount: Int): Policy =
+        Policy.values()[(this.ordinal + amount).coerceIn(0, Policy.values().size - 1)]
+
+    fun below(amount: Int): Policy = above(-amount)
+
     override fun toString(): String =
         when (this) {
             STRONGLY_APPROVE -> "Strongly Approves"
@@ -41,7 +46,7 @@ enum class Policy(val value: Double) {
 data class Party(
     val id: Int,
     val name: String,
-    val issueStances: Map<Issue, Policy> = mapOf()
+    val issueStances: MutableMap<Issue, Policy> = mutableMapOf()
 ) {
     fun getStance(issue: Issue): Policy =
         this.issueStances.getOrDefault(issue, Policy.INDIFFERENT)

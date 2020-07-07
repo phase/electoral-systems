@@ -3,11 +3,6 @@
 The goal of this program is to experiment with different voting systems.
 Currently, First Past The Post and the Alternative Vote have been implemented. 
 
-> Only one round of voting is implemented now, but in the future I would like
-> to add mutations to voters and parties to see how things can differ over time.
-> A good example would be how voters for small parties may vote for a larger
-> party if they lost the last election by a large margin.
-
 ## Model
 
 The model used here is meant to simulate how people's decisions on issues affect
@@ -38,7 +33,7 @@ close parties' stances on issues are to those of the people.
 
 > Given the random nature of the generation, the results produced here can often
 > be **fairly even**, with most parties having fair portion of the votes allocated
-> to them. When mutation is added, their difference in voters and parties will
+> to them. When mutation is improved, their difference in voters and parties will
 > show over time, and the benefits of different voting systems will start to appear.
 
 ### First Past The Post
