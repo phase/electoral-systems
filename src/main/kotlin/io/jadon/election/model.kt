@@ -1,5 +1,6 @@
 package io.jadon.election
 
+import java.util.*
 import kotlin.math.abs
 
 /**
@@ -71,8 +72,14 @@ data class Party(
 data class Voter(
     val id: Int,
     val name: String?,
-    val issueStances: MutableMap<Issue, Policy>
+    val issueStances: MutableMap<Issue, Policy>,
+    val memory: Queue<ElectionResults> = LinkedList()
 ) {
+
+    companion object {
+        const val RESULT_MEMORY = 5
+    }
+
     fun getStance(issue: Issue): Policy =
         this.issueStances.getOrDefault(issue, Policy.INDIFFERENT)
 
@@ -98,12 +105,67 @@ data class Voter(
 
         // if the above filter results in the voter not aligning with any parties, use the first 3 closest parties
         // (this should rarely happen)
-        val closestParties = if (preferableParties.size <= 3) {
+        val closestParties = if (preferableParties.isNotEmpty() && preferableParties.size <= 3) {
             preferableParties
         } else {
             partiesSortedByDistance.take(3)
         }
         return closestParties.map { it.first }
+    }
+
+    fun vote(parties: List<Party>): Vote {
+        val closestParties = findClosestParties(parties)
+        if (memory.isEmpty()) {
+            return Vote(this, closestParties.toMutableList())
+        }
+
+        val vote = Chance.chance(listOf(
+            // 25% chance they'll change their vote based on past results
+            25.0 to {
+                // past support of a party will influence a voter's current vote
+                // if the party a voter most aligns with isn't that popular, they will want to change their vote to a party
+                // they think has a better chance at winning
+                var pastSupport = mutableMapOf<Party, Double>()
+                memory.forEach {
+                    it.supportPercentage.forEach { (party, support) ->
+                        // add up all the support
+                        pastSupport.compute(party) { _, old ->
+                            (old ?: 0.0) + support
+                        }
+                    }
+                }
+                pastSupport = pastSupport.normalize().toMutableMap()
+
+                val newSupport = closestParties.map { it to pastSupport[it] }
+                    .filter { it.second != null }
+                    .sortedBy { it.second }
+                    .reversed()
+                    .map { it.first }
+
+                /* debug stats for voter vote change
+                val pastWinners = memory.map { it.winner }.joinToString(", ") { it.toString() }
+                if (!toString().contains("Voter")) {
+                    println(toString() + " memory: " + pastWinners + " \n past support: " + pastSupport + " \n party alignment: " + closestParties)
+                    println(" new vote:        $newSupport")
+                } */
+
+                newSupport
+            }
+        ), closestParties)
+
+        return Vote(this, vote.toMutableList())
+    }
+
+    fun remember(results: ElectionResults) {
+        if (memory.size >= RESULT_MEMORY) {
+            // remove the oldest election from memory
+            memory.poll()
+        }
+
+        // 80% chance they remember this election
+        Chance.chance(listOf(
+            80.0 to { memory.offer(results) }
+        ))
     }
 
     override fun toString(): String = name ?: "Voter #$id"

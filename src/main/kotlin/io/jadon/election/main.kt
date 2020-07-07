@@ -5,8 +5,14 @@ import kotlin.math.floor
 fun main(args: Array<String>) {
     val model = ModelGenerator.createModel(20, 7, 20000)
 
-    (1..5).forEach {
+    val winners = mutableMapOf<Party, Int>()
+
+    val elections = 200
+
+    (1..elections).forEach {
         println("Starting run #$it")
+
+        /*
         val partyVoters = mutableMapOf<Party, MutableMap<Int, Int>>()
         model.voters.forEach { voter ->
             voter.findClosestParties(model.parties).forEachIndexed { index, party ->
@@ -18,38 +24,75 @@ fun main(args: Array<String>) {
             }
         }
         partyVoters.forEach { (party, voteMap) ->
-            println("$party Vote Spread: ${voteMap.toList().sortedBy { it.first }.map { "#${it.first + 1}: ${it.second}" }}")
+            println("Party Preference for $party: ${voteMap.toList().sortedBy { it.first }
+                .map { "#${it.first + 1}: ${it.second}" }}")
+        }
+         */
+
+        val system = FirstPastThePost(model)
+
+        val (results, votes) = system.cycle()
+        val (winner, closeness) = results;
+
+        /*
+        partyVoters.clear()
+        votes.forEach { vote ->
+            vote.preferences.forEachIndexed {index, party ->
+                partyVoters.compute(party) { _, map ->
+                    val map = map ?: mutableMapOf()
+                    map.compute(index) { _, old -> (old ?: 0) + 1 }
+                    map
+                }
+            }
         }
 
-        val systems = listOf(FirstPastThePost(model), AlternativeVote(model))
+        partyVoters.forEach { (party, voteMap) ->
+            println("Votes for $party: ${voteMap.toList().sortedBy { it.first }
+                .map { "#${it.first + 1}: ${it.second}" }}")
+        }
 
-        systems.map { system ->
-            val (winner, votes) = system.cycle()
+        println(closeness)
+        */
+        println("$system Winner: $winner")
+        winners.compute(winner) { _, old -> (old ?: 0) + 1}
 
-            val votesForWinner = system.getPartyPreference(winner, votes)
+        /*
+        val votesForWinner = system.getPartyPreference(winner, votes)
+        val voteAmount = votes.size.toDouble()
 
-            val voteAmount = votes.size.toDouble()
+        if (votesForWinner.isNotEmpty()) {
             val votesThatHadWinnerAsFirst = votesForWinner[0].second.toDouble()
+            val percentageThatHadWinnerAsFirst = floor((votesThatHadWinnerAsFirst / voteAmount) * 100).toInt()
+            println("  Percentage that had winner as their first:     $percentageThatHadWinnerAsFirst% (${votesThatHadWinnerAsFirst.toInt()}/${voteAmount.toInt()})")
+        }
+
+        if (votesForWinner.size > 1) {
             val votesThatHadWinnerInTopTwo =
                 (votesForWinner[0].second + votesForWinner[1].second).toDouble()
+            val percentageThatHadWinnerInTopTwo = floor((votesThatHadWinnerInTopTwo / voteAmount) * 100).toInt()
+            println("  Percentage that had winner in their top two:   $percentageThatHadWinnerInTopTwo% (${votesThatHadWinnerInTopTwo.toInt()}/${voteAmount.toInt()})")
+        }
+
+        if (votesForWinner.size > 2) {
             val votesThatHadWinnerInTopThree =
                 (votesForWinner[0].second + votesForWinner[1].second + votesForWinner[2].second).toDouble()
-            val votesThatHadWinnerOnBallot = votes.filter { it.preferences.contains(winner) }.count()
-
-            val percentageThatHadWinnerAsFirst = floor((votesThatHadWinnerAsFirst / voteAmount) * 100).toInt()
-            val percentageThatHadWinnerInTopTwo = floor((votesThatHadWinnerInTopTwo / voteAmount) * 100).toInt()
             val percentageThatHadWinnerInTopThree = floor((votesThatHadWinnerInTopThree / voteAmount) * 100).toInt()
-            val percentageThatHadWinnerOnBallot = floor((votesThatHadWinnerOnBallot / voteAmount) * 100).toInt()
-
-            println("$system Winner: $winner")
-            println("  Percentage that had winner as their first:     $percentageThatHadWinnerAsFirst%")
-            println("  Percentage that had winner in their top two:   $percentageThatHadWinnerInTopTwo%")
-            println("  Percentage that had winner in their top three: $percentageThatHadWinnerInTopThree%")
-            // println("  Percentage that had winner on their ballot:    $percentageThatHadWinnerOnBallot%")
+            println("  Percentage that had winner in their top three: $percentageThatHadWinnerInTopThree% (${votesThatHadWinnerInTopThree.toInt()}/${voteAmount.toInt()})")
         }
+        */
+
+        // val votesThatHadWinnerOnBallot = votes.filter { it.preferences.contains(winner) }.count()
+        // val percentageThatHadWinnerOnBallot = floor((votesThatHadWinnerOnBallot / voteAmount) * 100).toInt()
+        // println("  Percentage that had winner on their ballot:    $percentageThatHadWinnerOnBallot%")
 
         val mutations = Mutator.mutate(model)
         println("Mutated model, $mutations mutations occurred")
+    }
+
+    println("Wins:")
+    winners.toList().sortedBy { it.second }.reversed().forEach { (party, wins) ->
+        val percent = floor((wins.toDouble() / elections) * 100).toInt()
+        println(" - $party: $wins ($percent%)")
     }
 }
 
