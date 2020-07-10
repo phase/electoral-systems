@@ -2,14 +2,24 @@ package io.jadon.election
 
 import java.util.*
 import kotlin.math.abs
+import kotlin.math.floor
+import kotlin.math.pow
+
+/**
+ * Categories of issues
+ */
+enum class Category {
+    ECONOMIC, // Equalities <-> Markets
+    DIPLOMATIC, // Nation <-> World
+    CIVIL, // Liberty <-> Authority
+    SOCIETAL // Tradition <-> Progress
+}
 
 /**
  * Represents a political issue a voter or party can take a stance on.
  * Examples include Public Health Care, Climate Change, Abortion
  */
-data class Issue(val id: Int, val name: String) {
-    constructor(id: Int) : this(id, "Issue #$id")
-}
+data class Issue(val category: Category, val id: Int, val name: String = "Issue #$id")
 
 /**
  * Represents a stance on an issue.
@@ -41,6 +51,35 @@ enum class Policy(val value: Double) {
         }
 }
 
+// given a map of stances on issues, calculate what the category policy values are and find the closest ideology
+fun Map<Issue, Policy>.ideology(): Ideology {
+    val issueCount = this.keys.size
+    val min = Policy.STRONGLY_DISAPPROVE.value * issueCount / Category.values().size
+    val max = Policy.STRONGLY_APPROVE.value * issueCount / Category.values().size
+
+    val categoryValues = mutableMapOf<Category, Double>()
+    this.forEach { (issue, policy) ->
+        categoryValues.compute(issue.category) { _, old -> (old ?: 0.0) + policy.value }
+    }
+
+     val scaledCategoryValues = categoryValues.map { (category, value) ->
+        category to floor((((value - min ) / (max - min)).coerceIn(0.0, 1.0) * 100))
+    }.toMap()
+
+    var currentIdeology: Ideology? = null
+    var currentDistance = Double.POSITIVE_INFINITY
+    for (ideology in Ideology.values()) {
+        val distance = scaledCategoryValues.map { (category, value) ->
+            abs(ideology.values.getOrDefault(category, 50.0) - value).pow(2.0)
+        }.sum()
+        if (distance < currentDistance) {
+            currentDistance = distance
+            currentIdeology = ideology
+        }
+    }
+    return currentIdeology!!
+}
+
 /**
  * Represents a Political Party that can takes stances on issues
  */
@@ -59,7 +98,7 @@ data class Party(
         return other.id == this.id
     }
 
-    override fun toString(): String = "$name Party"
+    override fun toString(): String = "$name Party (${this.issueStances.ideology()})"
 
     fun report(): String =
         "${toString()}\n" + issueStances.toList()

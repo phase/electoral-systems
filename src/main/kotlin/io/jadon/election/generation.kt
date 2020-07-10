@@ -59,7 +59,10 @@ object ModelGenerator {
         usedPartyNames.clear()
     }
 
-    fun createIssue(): Issue = Issue(issueCount++)
+    fun randomCategory(): Category =
+        Category.values()[Random.nextInt(Category.values().size)]
+
+    fun createIssue(): Issue = Issue(randomCategory(), issueCount++)
 
     fun createIssues(amount: Int): List<Issue> =
         (0..amount).map { createIssue() }

@@ -7,12 +7,11 @@ fun main(args: Array<String>) {
 
     val winners = mutableMapOf<Party, Int>()
 
-    val elections = 200
+    val elections = 20
 
     (1..elections).forEach {
         println("Starting run #$it")
 
-        /*
         val partyVoters = mutableMapOf<Party, MutableMap<Int, Int>>()
         model.voters.forEach { voter ->
             voter.findClosestParties(model.parties).forEachIndexed { index, party ->
@@ -27,14 +26,12 @@ fun main(args: Array<String>) {
             println("Party Preference for $party: ${voteMap.toList().sortedBy { it.first }
                 .map { "#${it.first + 1}: ${it.second}" }}")
         }
-         */
 
         val system = FirstPastThePost(model)
 
         val (results, votes) = system.cycle()
         val (winner, closeness) = results;
 
-        /*
         partyVoters.clear()
         votes.forEach { vote ->
             vote.preferences.forEachIndexed {index, party ->
@@ -52,7 +49,7 @@ fun main(args: Array<String>) {
         }
 
         println(closeness)
-        */
+
         println("$system Winner: $winner")
         winners.compute(winner) { _, old -> (old ?: 0) + 1}
 
@@ -97,9 +94,9 @@ fun main(args: Array<String>) {
 }
 
 fun example() {
-    val climateChange = Issue(0, "Climate Change")
-    val publicHealthCare = Issue(1, "Public Health Care")
-    val abortion = Issue(2, "Abortion")
+    val climateChange = Issue(Category.SOCIETAL, 0, "Climate Change")
+    val publicHealthCare = Issue(Category.SOCIETAL, 1, "Public Health Care")
+    val abortion = Issue(Category.SOCIETAL, 2, "Abortion")
 
     val red = Party(
         0, "Red", mutableMapOf(
